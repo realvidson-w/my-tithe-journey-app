@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f5132">
+<title>My Tithe Journey</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7f5;color:#17221b}
+header{background:#0f5132;color:#fff;padding:22px 18px;text-align:center}
+header h1{margin:0 0 5px;font-size:27px}header p{margin:0;opacity:.9}
+.container{max-width:900px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 3px 14px #00000012}
+.verse{background:#0f5132;color:white;border-radius:16px;padding:20px;min-height:170px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.verse .text{font-size:20px;line-height:1.55}.verse .ref{margin-top:12px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:#eef6f0;border-radius:12px;padding:14px;text-align:center}.stat b{display:block;font-size:22px;margin-top:5px}
+label{display:block;font-weight:bold;margin:10px 0 6px}input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid #ccd7cf;font-size:16px}
+button{background:#0f5132;color:#fff;border:0;font-weight:bold;cursor:pointer;margin-top:10px}
+button.secondary{background:#e8efea;color:#0f5132}.danger{background:#a52a2a!important}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:9px;border-bottom:1px solid #e4e9e5;text-align:left}th{background:#f0f4f1}
+.small{font-size:13px;color:#5b6b61}.giving{line-height:1.7}.giving strong{color:#0f5132}
+footer{text-align:center;padding:20px;color:#6c776f;font-size:13px}
+@media(max-width:600px){.verse .text{font-size:17px}table{font-size:12px}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>My Tithe Journey</h1>
+  <p>Faithful stewardship • Giving • Journey</p>
+</header>
+
+<div class="container">
+  <section class="verse">
+    <div id="verseText" class="text"></div>
+    <div id="verseRef" class="ref"></div>
+  </section>
+
+  <section class="card">
+    <h2>My Tithe Summary</h2>
+    <div class="grid">
+      <div class="stat">Total Records<b id="recordCount">0</b></div>
+      <div class="stat">Total Tithe<b id="totalTithe">₦0</b></div>
+      <div class="stat">This Month<b id="monthTithe">₦0</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Record a Tithe</h2>
+    <label for="date">Date</label>
+    <input id="date" type="date">
+    <label for="amount">Amount (₦)</label>
+    <input id="amount" type="number" min="0" step="0.01" placeholder="Enter amount">
+    <label for="note">Note (optional)</label>
+    <input id="note" type="text" placeholder="e.g. Monthly tithe">
+    <button onclick="addRecord()">Save Tithe</button>
+    <p id="message" class="small"></p>
+  </section>
+
+  <section class="card">
+    <h2>Giving Details</h2>
+    <div class="giving">
+      <strong>Ministry:</strong> Worship Flames Ecclesia Ministries - Tithe and Prophet Offering<br>
+      <strong>Bank:</strong> Moniepoint MFB<br>
+      <strong>Account Number:</strong> 4005658591
+    </div>
+    <button class="secondary" onclick="copyAccount()">Copy Account Number</button>
+    <p id="copyMessage" class="small"></p>
+  </section>
+
+  <section class="card">
+    <h2>My Tithe Records</h2>
+    <div class="actions">
+      <button class="secondary" onclick="exportCSV()">Export CSV</button>
+      <button class="danger" onclick="clearAll()">Delete All Records</button>
+    </div>
+    <div style="overflow-x:auto;margin-top:12px">
+      <table>
+        <thead><tr><th>Date</th><th>Amount</th><th>Note</th><th>Action</th></tr></thead>
+        <tbody id="records"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Reminders</h2>
+    <p>Use Friday and Saturday as your preferred reminder days for preparing your tithe and reviewing your giving journey.</p>
+    <p class="small">Reminder scheduling can be connected during the next app-building phase.</p>
+  </section>
+</div>
+
+<footer>My Tithe Journey • Worship Flames Ecclesia</footer>
+
+<script>
+const verses = [
+  {
+    text:"“And I will make of thee a great nation, and I will bless thee, and make thy name great; and thou shalt be a blessing.”",
+    ref:"Genesis 12:2 (KJV)"
+  },
+  {
+    text:"“Because of your tithe, saith the LORD of hosts, I will open you the windows of heaven, and pour you out a blessing, that there shall not be room enough to receive it. And I will rebuke the devourer for your sakes!”",
+    ref:"Malachi 3:10–11"
+  },
+  {
+    text:"“I have not seen the righteous forsaken, nor his seed begging bread.”",
+    ref:"Psalm 37:25 (KJV)"
+  }
+];
+
+let verseIndex = 0;
+function showVerse(){
+  const v=verses[verseIndex];
+  document.getElementById("verseText").textContent=v.text;
+  document.getElementById("verseRef").textContent="— "+v.ref;
+  verseIndex=(verseIndex+1)%verses.length;
+}
+showVerse();
+setInterval(showVerse,7000);
+
+const KEY="my_tithe_journey_fresh_records";
+const dateInput=document.getElementById("date");
+dateInput.value=new Date().toISOString().slice(0,10);
+
+function records(){return JSON.parse(localStorage.getItem(KEY)||"[]")}
+function saveRecords(r){localStorage.setItem(KEY,JSON.stringify(r));render()}
+
+function addRecord(){
+  const amount=Number(document.getElementById("amount").value);
+  const date=document.getElementById("date").value;
+  const note=document.getElementById("note").value.trim();
+  if(!date || !amount || amount<=0){document.getElementById("message").textContent="Please enter a valid date and amount.";return}
+  const r=records();
+  r.unshift({id:Date.now(),date,amount,note});
+  saveRecords(r);
+  document.getElementById("amount").value="";
+  document.getElementById("note").value="";
+  document.getElementById("message").textContent="Tithe saved successfully.";
+}
+
+function deleteRecord(id){
+  saveRecords(records().filter(x=>x.id!==id));
+}
+
+function clearAll(){
+  if(confirm("Delete all tithe records? This cannot be undone.")){localStorage.removeItem(KEY);render()}
+}
+
+function render(){
+  const r=records();
+  document.getElementById("recordCount").textContent=r.length;
+  const total=r.reduce((s,x)=>s+Number(x.amount),0);
+  document.getElementById("totalTithe").textContent=money(total);
+  const ym=new Date().toISOString().slice(0,7);
+  const month=r.filter(x=>x.date.startsWith(ym)).reduce((s,x)=>s+Number(x.amount),0);
+  document.getElementById("monthTithe").textContent=money(month);
+  const tbody=document.getElementById("records");
+  tbody.innerHTML=r.length ? r.map(x=>`<tr><td>${escapeHtml(x.date)}</td><td>${money(x.amount)}</td><td>${escapeHtml(x.note||"—")}</td><td><button class="danger" style="padding:7px;margin:0" onclick="deleteRecord(${x.id})">Delete</button></td></tr>`).join("") :
+    '<tr><td colspan="4" class="small">No tithe records yet.</td></tr>';
+}
+function money(n){return "₦"+Number(n).toLocaleString("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function exportCSV(){
+  const r=records();
+  if(!r.length){alert("There are no records to export.");return}
+  const rows=[["Date","Amount (NGN)","Note"],...r.map(x=>[x.date,x.amount,x.note||""])];
+  const csv=rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="my-tithe-journey-records.csv";a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function copyAccount(){
+  try{await navigator.clipboard.writeText("4005658591");document.getElementById("copyMessage").textContent="Account number copied."}
+  catch(e){document.getElementById("copyMessage").textContent="Copy is not available in this browser; please copy it manually."}
+}
+render();
+</script>
+</body>
+</html>
