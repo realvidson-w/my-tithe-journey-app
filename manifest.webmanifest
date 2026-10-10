@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "My Tithe Journey — Worship Flames Ecclesia",
+  "short_name": "Tithe Journey",
+  "description": "Faithful giving. Clear records. Timely reminders.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6f3",
+  "theme_color": "#123c32",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
